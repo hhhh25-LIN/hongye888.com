@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>购物车 - 深圳市宏业农产品有限公司</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 购物车样式 */
+    .cart-list {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+    .cart-info {
+      flex: 1;
+    }
+    .cart-name {
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    .cart-category {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .cart-price {
+      color: #e74c3c;
+    }
+    .cart-count {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .count-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #ddd;
+      background: #f5f5f5;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .count-input {
+      width: 50px;
+      height: 30px;
+      text-align: center;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .cart-total {
+      text-align: right;
+      font-size: 18px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .cart-empty {
+      text-align: center;
+      padding: 40px 0;
+      color: #666;
+    }
+    .cart-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    /* 底部联系电话样式 */
+    .footer-contact {
+      margin-top: 60px;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      border-top: 1px solid #eee;
+    }
+    .footer-address {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">首页</a>
+    <a href="cart.html">我的购物车</a>
+    <a href="order-form.html">直接下单</a>
+  </div>
+
+  <div class="container">
+    <h3 style="margin: 30px 0 20px; color: #2c3e50;">我的购物车</h3>
+    
+    <!-- 购物车列表 -->
+    <div class="cart-list" id="cartList">
+      <div class="cart-empty">购物车为空，快去添加商品吧～</div>
+    </div>
+
+    <!-- 购物车总计 + 操作按钮 -->
+    <div class="cart-total" id="cartTotal">总计：¥ 0.00</div>
+    <div class="cart-actions">
+      <button class="btn btn-danger" id="clearCart">清空购物车</button>
+      <a href="order-form-cart.html" class="btn btn-primary" id="submitCart">提交订单</a>
+    </div>
+
+    <!-- 底部联系电话 -->
+    <div class="footer-contact">
+      如有疑问请拨打电话：13528492168//13410033908
+      <div class="footer-address">公司地址：深圳市龙岗区横岗街道四联社区面前岭五巷三号一楼</div>
+    </div>
+  </div>
+
+  <script>
+    // 加载购物车（显示分类）
+    function loadCart() {
+      const cartList = document.getElementById('cartList');
+      const cartTotal = document.getElementById('cartTotal');
+      const submitCart = document.getElementById('submitCart');
+      const categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      // 获取购物车数据
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 购物车为空
+      if (cart.length === 0) {
+        cartList.innerHTML = '<div class="cart-empty">购物车为空，快去添加商品吧～</div>';
+        cartTotal.textContent = '总计：¥ 0.00';
+        submitCart.style.display = 'none';
+        return;
+      }
+
+      // 显示提交按钮
+      submitCart.style.display = 'inline-block';
+      
+      // 渲染购物车商品（显示分类）
+      let totalPrice = 0;
+      cartList.innerHTML = cart.map(item => {
+        // 获取分类名称
+        const cat = categories.find(c => c.id === item.categoryId) || {name: '未分类'};
+        // 计算单商品总价
+        const itemTotal = (item.price * item.count).toFixed(2);
+        totalPrice += Number(itemTotal);
+        
+        return `
+          <div class="cart-item" data-id="${item.id}">
+            <div class="cart-info">
+              <div class="cart-name">${item.name}</div>
+              <div class="cart-category">分类：${cat.name}</div>
+              <div class="cart-price">¥ ${item.price}/${item.unit}（单价）</div>
+            </div>
+            <div class="cart-count">
+              <button class="count-btn minus">-</button>
+              <input type="number" class="count-input" value="${item.count}" min="1">
+              <button class="count-btn plus">+</button>
+            </div>
+            <div class="cart-item-total">¥ ${itemTotal}</div>
+            <button class="btn btn-danger delete-item">删除</button>
+          </div>
+        `;
+      }).join('');
+
+      // 更新总计
+      cartTotal.textContent = `总计：¥ ${totalPrice.toFixed(2)}`;
+
+      // 绑定数量修改事件
+      bindCartEvents();
+    }
+
+    // 绑定购物车操作事件（数量修改、删除）
+    function bindCartEvents() {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 减数量
+      document.querySelectorAll('.minus').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const itemEl = this.closest('.cart-item');
+          const productId = itemEl.dataset.id;
+          const countInput = itemEl.querySelector('.count-input');
+          let count = Number(countInput.value);
+          
+          if (count > 1) {
+            count--;
+            countInput.value = count;
+            // 更新购物车数据
+            updateCartCount(productId, count);
+          }
+        });
+      });
+
+      // 加数量
+      document.querySelectorAll('.plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const itemEl = this.closest('.cart-item');
+          const productId = itemEl.dataset.id;
+          const countInput = itemEl.querySelector('.count-input');
+          let count = Number(countInput.value);
+          
+          count++;
+          countInput.value = count;
+          // 更新购物车数据
+          updateCartCount(productId, count);
+        });
+      });
+
+      // 手动修改数量
+      document.querySelectorAll('.count-input').forEach(input => {
+        input.addEventListener('change', function() {
+          const itemEl = this.closest('.cart-item');
+          const productId = itemEl.dataset.id;
+          let count = Number(this.value);
+          
+          if (count < 1) count = 1;
+          this.value = count;
+          // 更新购物车数据
+          updateCartCount(productId, count);
+        });
+      });
+
+      // 删除商品
+      document.querySelectorAll('.delete-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const itemEl = this.closest('.cart-item');
+          const productId = itemEl.dataset.id;
+          
+          // 过滤掉删除的商品
+          cart = cart.filter(item => item.id !== productId);
+          localStorage.setItem('cart', JSON.stringify(cart));
+          // 重新加载购物车
+          loadCart();
+        });
+      });
+    }
+
+    // 更新购物车商品数量
+    function updateCartCount(productId, count) {
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 找到对应商品并更新数量
+      cart = cart.map(item => {
+        if (item.id === productId) {
+          return {...item, count: count};
+        }
+        return item;
+      });
+      
+      localStorage.setItem('cart', JSON.stringify(cart));
+      // 重新加载购物车
+      loadCart();
+    }
+
+    // 清空购物车
+    document.getElementById('clearCart').addEventListener('click', function() {
+      if (confirm('确定要清空购物车吗？')) {
+        localStorage.removeItem('cart');
+        loadCart();
+      }
+    });
+
+    // 页面加载时加载购物车
+    window.onload = loadCart;
+  </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提交订单 - 深圳市宏业农产品有限公司</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .footer-contact {
+      margin-top: 60px;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      border-top: 1px solid #eee;
+    }
+    .footer-address {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">首页</a>
+    <a href="cart.html">我的购物车</a>
+    <a href="order-form.html">直接下单</a>
+  </div>
+
+  <div class="container">
+    <h3 style="margin: 30px 0 20px; color: #2c3e50;">提交订单</h3>
+    
+    <div class="form-box" id="productInfoBox" style="margin-bottom: 30px;">
+      <p>请从首页选择商品后再下单</p>
+    </div>
+
+    <div class="form-box">
+      <form id="orderForm">
+        <div class="form-group">
+          <label for="count">购买数量</label>
+          <input type="number" id="count" min="1" value="1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="companyName">公司名称</label>
+          <input type="text" id="companyName" placeholder="请填写贵公司名称" required>
+        </div>
+
+        <div class="form-group">
+          <label for="orderRemark">订单备注</label>
+          <textarea id="orderRemark" placeholder="请填写特殊需求（如配送时间、商品规格等）"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">提交订单</button>
+      </form>
+    </div>
+
+    <div class="footer-contact">
+      如有疑问请拨打电话：13528492168//13410033908
+      <div class="footer-address">公司地址：深圳市龙岗区横岗街道四联社区面前岭五巷三号一楼</div>
+    </div>
+  </div>
+
+  <script>
+    // 获取URL参数中的商品ID
+    function getUrlParam(name) {
+      const reg = new RegExp(`(^|&)${name}=([^&]*)(&|$)`);
+      const r = window.location.search.substr(1).match(reg);
+      if (r != null) return unescape(r[2]);
+      return null;
+    }
+
+    let productId = getUrlParam('productId');
+    let product = null;
+
+    // 加载商品信息
+    function loadProductInfo() {
+      const productInfoBox = document.getElementById('productInfoBox');
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      const categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        productInfoBox.innerHTML = '<p>该商品不存在，请重新选择</p>';
+        document.getElementById('orderForm').querySelector('button').disabled = true;
+        return;
+      }
+
+      // 获取分类名称
+      const cat = categories.find(c => c.id === product.categoryId) || {name: '未分类'};
+      
+      // 显示商品信息
+      productInfoBox.innerHTML = `
+        <h4>商品信息</h4>
+        <p>名称：${product.name}</p>
+        <p>分类：${cat.name}</p>
+        <p>单价：¥ ${product.price}/${product.unit}</p>
+      `;
+      document.getElementById('orderForm').querySelector('button').disabled = false;
+    }
+
+    // 提交订单
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      if (!product) {
+        alert('请选择有效的商品！');
+        return;
+      }
+
+      const count = Number(document.getElementById('count').value);
+      const companyName = document.getElementById('companyName').value;
+      const remark = document.getElementById('orderRemark').value;
+      const totalPrice = (product.price * count).toFixed(2);
+
+      // 构造订单数据（新增categoryId）
+      const order = {
+        id: Date.now().toString(),
+        createTime: new Date().toLocaleString(),
+        productName: product.name,
+        productPrice: product.price,
+        productUnit: product.unit,
+        categoryId: product.categoryId,
+        count: count,
+        totalPrice: totalPrice,
+        companyName: companyName,
+        remark: remark || '无'
+      };
+
+      // 保存订单
+      const orders = JSON.parse(localStorage.getItem('orders')) || [];
+      orders.push(order);
+      localStorage.setItem('orders', JSON.stringify(orders));
+
+      alert('商品订单提交成功！深圳市宏业农产品有限公司会尽快联系您~');
+      window.location.href = 'index.html';
+    });
+
+    // 页面加载时执行
+    window.onload = function() {
+      if (productId) {
+        loadProductInfo();
+      } else {
+        document.getElementById('orderForm').querySelector('button').disabled = true;
+      }
+    };
+  </script>
+</body>
+</html>

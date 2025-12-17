@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提交购物车订单 - 深圳市宏业农产品有限公司</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .order-summary {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .summary-item {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .summary-total {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 15px;
+      color: #e74c3c;
+    }
+    /* 底部联系电话样式 */
+    .footer-contact {
+      margin-top: 60px;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      border-top: 1px solid #eee;
+    }
+    .footer-address {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">首页</a>
+    <a href="cart.html">我的购物车</a>
+    <a href="order-form.html">直接下单</a>
+  </div>
+
+  <div class="container">
+    <!-- 订单摘要 -->
+    <div class="order-summary" id="orderSummary">
+      <h3 class="form-title">订单摘要</h3>
+      <div class="summary-empty">购物车为空，无法提交订单～</div>
+    </div>
+
+    <!-- 提交订单表单 -->
+    <div class="form-box">
+      <h3 class="form-title">填写订单信息</h3>
+      <form id="cartOrderForm">
+        <div class="form-group">
+          <label for="companyName">公司名称</label>
+          <input type="text" id="companyName" placeholder="请填写贵公司名称" required>
+        </div>
+
+        <div class="form-group">
+          <label for="orderRemark">订单备注</label>
+          <textarea id="orderRemark" placeholder="请填写特殊需求（如配送时间、商品规格等）"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">提交订单</button>
+      </form>
+    </div>
+
+    <!-- 底部联系电话 -->
+    <div class="footer-contact">
+      如有疑问请拨打电话：13528492168//13410033908
+      <div class="footer-address">公司地址：深圳市龙岗区横岗街道四联社区面前岭五巷三号一楼</div>
+    </div>
+  </div>
+
+  <script>
+    // 加载订单摘要
+    function loadOrderSummary() {
+      const orderSummary = document.getElementById('orderSummary');
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 购物车为空
+      if (cart.length === 0) {
+        orderSummary.innerHTML = `
+          <h3 class="form-title">订单摘要</h3>
+          <div class="summary-empty">购物车为空，无法提交订单～</div>
+        `;
+        // 禁用提交按钮
+        document.getElementById('cartOrderForm').querySelector('button').disabled = true;
+        return;
+      }
+
+      // 计算总计
+      let totalPrice = 0;
+      let summaryHtml = `<h3 class="form-title">订单摘要</h3>`;
+      
+      cart.forEach(item => {
+        const itemTotal = (item.price * item.count).toFixed(2);
+        totalPrice += Number(itemTotal);
+        summaryHtml += `
+          <div class="summary-item">
+            <div>${item.name} × ${item.count}${item.unit}</div>
+            <div>单价：¥${item.price}/${item.unit} | 小计：¥${itemTotal}</div>
+          </div>
+        `;
+      });
+      
+      summaryHtml += `<div class="summary-total">订单总计：¥${totalPrice.toFixed(2)}</div>`;
+      orderSummary.innerHTML = summaryHtml;
+      // 启用提交按钮
+      document.getElementById('cartOrderForm').querySelector('button').disabled = false;
+    }
+
+    // 提交购物车订单
+    document.getElementById('cartOrderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const companyName = document.getElementById('companyName').value;
+      const remark = document.getElementById('orderRemark').value;
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 验证购物车
+      if (cart.length === 0) {
+        alert('购物车为空，无法提交订单！');
+        return;
+      }
+
+      // 构造批量订单数据
+      const order = {
+        id: Date.now().toString(), // 订单ID
+        createTime: new Date().toLocaleString(), // 下单时间
+        companyName: companyName,
+        remark: remark || '无',
+        products: cart.map(item => ({
+          name: item.name,
+          price: item.price,
+          unit: item.unit,
+          count: item.count,
+          categoryId: item.categoryId,
+          itemTotal: (item.price * item.count).toFixed(2)
+        })),
+        totalPrice: cart.reduce((total, item) => total + (item.price * item.count), 0).toFixed(2)
+      };
+
+      // 保存订单到本地存储
+      const orders = JSON.parse(localStorage.getItem('orders')) || [];
+      orders.push(order);
+      localStorage.setItem('orders', JSON.stringify(orders));
+
+      // 清空购物车
+      localStorage.removeItem('cart');
+
+      // 提示并跳转
+      alert('商品订单提交成功！深圳市宏业农产品有限公司会尽快联系您~');
+      window.location.href = 'index.html';
+    });
+
+    // 页面加载时执行
+    window.onload = loadOrderSummary;
+  </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理员后台 - 深圳市宏业农产品有限公司</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 底部联系电话样式 */
+    .footer-contact {
+      margin-top: 60px;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      border-top: 1px solid #eee;
+    }
+    .footer-address {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #555;
+    }
+    /* 分类管理样式 */
+    .category-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .category-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .category-tag {
+      background: #f5f5f5;
+      padding: 5px 15px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .category-delete {
+      color: #e74c3c;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="admin.html">商品管理</a>
+    <a href="admin-orders.html">查看订单</a>
+    <a href="change-password.html">修改密码</a>
+    <a href="index.html" onclick="logout()">退出登录</a>
+  </div>
+
+  <div class="container">
+    <!-- 分类管理区域 -->
+    <div class="category-box">
+      <h3 class="form-title">商品分类管理</h3>
+      <form id="addCategoryForm">
+        <div class="form-group">
+          <label for="categoryName">新增分类名称</label>
+          <input type="text" id="categoryName" placeholder="如：水果、蔬菜、粮油" required>
+        </div>
+        <button type="submit" class="btn btn-primary">添加分类</button>
+      </form>
+      <div class="category-list" id="categoryList">
+        <p>暂无分类，点击上方添加~</p>
+      </div>
+    </div>
+
+    <!-- 移除图片输入框后的添加商品表单 -->
+    <div class="form-box">
+      <h3 class="form-title">添加商品</h3>
+      <form id="addProductForm">
+        <div class="form-group">
+          <label for="productName">商品名称</label>
+          <input type="text" id="productName" placeholder="如：苹果、大米、青菜" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productPrice">商品价格（元）</label>
+          <input type="number" id="productPrice" min="0.01" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+          <label for="productUnit">商品单位</label>
+          <input type="text" id="productUnit" placeholder="如：斤、包、件、个" value="斤" required>
+        </div>
+
+        <!-- 新增分类选择 -->
+        <div class="form-group">
+          <label for="productCategory">商品分类</label>
+          <select id="productCategory" required>
+            <option value="">请选择分类</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">添加商品</button>
+      </form>
+    </div>
+
+    <!-- 商品列表（移除图片显示） -->
+    <h3 style="margin: 30px 0 20px; color: #2c3e50;">已添加商品</h3>
+    <div class="product-list" id="adminProductList">
+      <div class="product-item">
+        <p>暂无商品，点击上方添加~</p>
+      </div>
+    </div>
+
+    <!-- 底部联系电话 -->
+    <div class="footer-contact">
+      如有疑问请拨打电话：13528492168//13410033908
+      <div class="footer-address">公司地址：深圳市龙岗区横岗街道四联社区面前岭五巷三号一楼</div>
+    </div>
+  </div>
+
+  <script>
+    // 登录验证（防止直接访问）
+    if (localStorage.getItem('isLogin') !== 'true') {
+      window.location.href = 'login.html';
+    }
+
+    // 退出登录
+    function logout() {
+      localStorage.removeItem('isLogin');
+      alert('已退出登录！');
+    }
+
+    // ========== 分类管理逻辑 ==========
+    // 加载分类列表
+    function loadCategories() {
+      const categoryList = document.getElementById('categoryList');
+      const productCategory = document.getElementById('productCategory');
+      let categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      // 渲染分类列表（管理员查看）
+      if (categories.length === 0) {
+        categoryList.innerHTML = '<p>暂无分类，点击上方添加~</p>';
+        productCategory.innerHTML = '<option value="">暂无分类，请先添加</option>';
+        return;
+      }
+
+      // 渲染分类标签
+      categoryList.innerHTML = categories.map(cat => `
+        <div class="category-tag" data-id="${cat.id}">
+          ${cat.name}
+          <span class="category-delete" onclick="deleteCategory('${cat.id}')">×</span>
+        </div>
+      `).join('');
+
+      // 渲染分类下拉框（添加商品用）
+      productCategory.innerHTML = '<option value="">请选择分类</option>' + 
+        categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+    }
+
+    // 添加分类
+    document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const categoryName = document.getElementById('categoryName').value.trim();
+      let categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      // 验证分类名称
+      if (categories.some(cat => cat.name === categoryName)) {
+        alert('该分类已存在！');
+        return;
+      }
+
+      // 添加新分类
+      categories.push({
+        id: Date.now().toString(),
+        name: categoryName
+      });
+      localStorage.setItem('categories', JSON.stringify(categories));
+      
+      // 重置表单 + 重新加载分类
+      this.reset();
+      alert('分类添加成功！');
+      loadCategories();
+    });
+
+    // 删除分类
+    function deleteCategory(categoryId) {
+      if (!confirm('确定要删除该分类吗？删除后该分类下的商品不会被删除')) return;
+      let categories = JSON.parse(localStorage.getItem('categories')) || [];
+      categories = categories.filter(cat => cat.id !== categoryId);
+      localStorage.setItem('categories', JSON.stringify(categories));
+      loadCategories();
+      loadAdminProducts(); // 同步更新商品列表
+    }
+
+    // ========== 商品管理逻辑 ==========
+    // 加载商品列表（管理员端）
+    function loadAdminProducts() {
+      const productList = document.getElementById('adminProductList');
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      const categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      if (products.length === 0) {
+        productList.innerHTML = '<div class="product-item"><p>暂无商品，点击上方添加~</p></div>';
+        return;
+      }
+
+      // 渲染商品（显示分类）
+      productList.innerHTML = products.map(product => {
+        // 获取分类名称
+        const cat = categories.find(c => c.id === product.categoryId) || {name: '未分类'};
+        return `
+          <div class="product-item">
+            <div class="product-name">${product.name}</div>
+            <div>分类：${cat.name}</div>
+            <div class="product-price">¥ ${product.price}/${product.unit}</div>
+            <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">删除商品</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 删除商品
+    function deleteProduct(productId) {
+      if (!confirm('确定要删除该商品吗？')) return;
+      let products = JSON.parse(localStorage.getItem('products')) || [];
+      products = products.filter(p => p.id !== productId);
+      localStorage.setItem('products', JSON.stringify(products));
+      loadAdminProducts(); // 重新加载列表
+    }
+
+    // 添加商品（新增分类字段）
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // 获取表单数据
+      const name = document.getElementById('productName').value;
+      const price = document.getElementById('productPrice').value;
+      const unit = document.getElementById('productUnit').value;
+      const categoryId = document.getElementById('productCategory').value;
+
+      // 构造商品数据（新增categoryId）
+      const product = {
+        id: Date.now().toString(),
+        name: name,
+        price: price,
+        unit: unit,
+        categoryId: categoryId
+      };
+
+      // 保存到本地存储
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      products.push(product);
+      localStorage.setItem('products', JSON.stringify(products));
+
+      // 重置表单 + 重新加载列表
+      this.reset();
+      alert('商品添加成功！');
+      loadAdminProducts();
+    });
+
+    // 页面加载时执行
+    window.onload = function() {
+      loadCategories();
+      loadAdminProducts();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深圳市宏业农产品有限公司 - 首页</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 双通道样式 */
+    .channel-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    .channel-card {
+      background: white;
+      padding: 40px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .channel-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      color: #3498db;
+    }
+    .channel-title {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #2c3e50;
+    }
+    .channel-desc {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .channel-btn {
+      padding: 12px 30px;
+      font-size: 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .channel-btn:hover {
+      background-color: #2980b9;
+    }
+    .manager-channel .channel-icon,
+    .manager-channel .channel-btn {
+      background-color: #e74c3c;
+    }
+    .manager-channel .channel-btn:hover {
+      background-color: #c0392b;
+    }
+    /* 商品卡片按钮组 */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+    /* 底部联系信息样式 */
+    .footer-contact {
+      margin-top: 60px;
+      padding: 20px;
+      background: #f5f5f5;
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      border-top: 1px solid #eee;
+    }
+    .footer-address {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #555;
+    }
+    /* 分类筛选样式 */
+    .category-filter {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: none;
+    }
+    .filter-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filter-tag {
+      padding: 5px 15px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .filter-tag.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">首页</a>
+    <a href="cart.html">我的购物车</a>
+  </div>
+
+  <div class="container">
+    <h2 style="text-align: center; color: #2c3e50; margin-top: 20px;">深圳市宏业农产品有限公司</h2>
+
+    <!-- 客户/管理人员双通道 -->
+    <div class="channel-container">
+      <!-- 客户通道 -->
+      <div class="channel-card customer-channel">
+        <div class="channel-icon">🛒</div>
+        <h3 class="channel-title">客户下单通道</h3>
+        <p class="channel-desc">浏览商品列表，添加到购物车，统一提交订单后等待工作人员联系</p>
+        <a href="javascript:;" onclick="showProductList()" class="channel-btn">进入商品列表</a>
+      </div>
+
+      <!-- 管理人员通道 -->
+      <div class="channel-card manager-channel">
+        <div class="channel-icon">🔧</div>
+        <h3 class="channel-title">管理人员后台</h3>
+        <p class="channel-desc">登录管理后台，添加/管理商品、查看客户订单、修改管理密码</p>
+        <a href="login.html" class="channel-btn">进入管理登录</a>
+      </div>
+    </div>
+
+    <!-- 分类筛选区域 -->
+    <div class="category-filter" id="categoryFilter">
+      <div class="filter-title">商品分类筛选</div>
+      <div class="filter-tags" id="filterTags">
+        <div class="filter-tag active" data-id="all">全部</div>
+      </div>
+    </div>
+
+    <!-- 商品列表（带添加购物车功能） -->
+    <div class="product-list" id="productList" style="margin-top: 20px; display: none;">
+      <div class="product-item">
+        <p>暂无商品，请管理员先添加~</p>
+      </div>
+    </div>
+
+    <!-- 底部联系信息（电话+地址） -->
+    <div class="footer-contact">
+      如有疑问请拨打电话：13528492168//13410033908
+      <div class="footer-address">公司地址：深圳市龙岗区横岗街道四联社区面前岭五巷三号一楼</div>
+    </div>
+  </div>
+
+  <script>
+    // 显示商品列表和分类筛选
+    function showProductList() {
+      document.getElementById('categoryFilter').style.display = 'block';
+      document.getElementById('productList').style.display = 'block';
+      loadCategories();
+      loadProducts();
+    }
+
+    // 加载分类筛选
+    function loadCategories() {
+      const filterTags = document.getElementById('filterTags');
+      let categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      // 基础标签：全部
+      let tagsHtml = '<div class="filter-tag active" data-id="all">全部</div>';
+      
+      // 添加分类标签
+      if (categories.length > 0) {
+        tagsHtml += categories.map(cat => `
+          <div class="filter-tag" data-id="${cat.id}">${cat.name}</div>
+        `).join('');
+      } else {
+        tagsHtml += '<div class="filter-tag disabled">暂无分类</div>';
+      }
+      
+      filterTags.innerHTML = tagsHtml;
+      
+      // 绑定分类筛选事件
+      document.querySelectorAll('.filter-tag').forEach(tag => {
+        if (!tag.classList.contains('disabled')) {
+          tag.addEventListener('click', function() {
+            // 切换激活状态
+            document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            // 筛选商品
+            loadProducts(this.dataset.id);
+          });
+        }
+      });
+    }
+
+    // 加载商品列表（带分类筛选+添加购物车功能）
+    function loadProducts(filterId = 'all') {
+      const productList = document.getElementById('productList');
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      const categories = JSON.parse(localStorage.getItem('categories')) || [];
+      
+      // 分类筛选
+      let filteredProducts = products;
+      if (filterId !== 'all') {
+        filteredProducts = products.filter(p => p.categoryId === filterId);
+      }
+      
+      if (filteredProducts.length === 0) {
+        productList.innerHTML = '<div class="product-item"><p>暂无该分类的商品~</p></div>';
+        return;
+      }
+
+      // 渲染商品（显示分类+添加购物车按钮）
+      productList.innerHTML = filteredProducts.map(product => {
+        // 获取分类名称
+        const cat = categories.find(c => c.id === product.categoryId) || {name: '未分类'};
+        return `
+          <div class="product-item">
+            <div class="product-name">${product.name}</div>
+            <div>分类：${cat.name}</div>
+            <div class="product-price">¥ ${product.price}/${product.unit}</div>
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="addToCart('${product.id}')">加入购物车</button>
+              <a href="order-form.html?productId=${product.id}" class="btn btn-primary">立即下单</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 添加商品到购物车
+    function addToCart(productId) {
+      const products = JSON.parse(localStorage.getItem('products')) || [];
+      const product = products.find(p => p.id === productId);
+      
+      if (!product) {
+        alert('商品不存在！');
+        return;
+      }
+
+      // 获取购物车数据
+      let cart = JSON.parse(localStorage.getItem('cart')) || [];
+      
+      // 检查商品是否已在购物车
+      const existingItem = cart.find(item => item.id === productId);
+      if (existingItem) {
+        // 已存在则数量+1
+        cart = cart.map(item => {
+          if (item.id === productId) {
+            return {...item, count: item.count + 1};
+          }
+          return item;
+        });
+      } else {
+        // 不存在则添加新商品（默认数量1）
+        cart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          unit: product.unit,
+          categoryId: product.categoryId,
+          count: 1
+        });
+      }
+
+      // 保存购物车
+      localStorage.setItem('cart', JSON.stringify(cart));
+      alert(`${product.name} 已加入购物车！`);
+    }
+
+    // 页面加载时执行
+    window.onload = function() {
+      // 初始隐藏商品列表和分类筛选
+      document.getElementById('categoryFilter').style.display = 'none';
+      document.getElementById('productList').style.display = 'none';
+    };
+  </script>
+</body>
+</html>
